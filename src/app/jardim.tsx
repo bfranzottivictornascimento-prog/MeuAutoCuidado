@@ -354,12 +354,17 @@ const chaveBorboletas = (email) => `@MeuAutoCuidado:rush:borboletas:${email}`;
 // CÂMERA DA CORRIDA
 // =============================================
 function CameraCorrida() {
-    const { camera } = useThree();
+    const { camera, size } = useThree();
     useEffect(() => {
-        camera.position.set(0, 5.9, 12.6);
+        const celular = size.width < 600;
+        if (camera instanceof THREE.PerspectiveCamera) {
+            // Campo de visao maior em retrato: mostra as tres pistas no celular.
+            camera.fov = celular ? (size.width < 390 ? 80 : 76) : 62;
+        }
+        camera.position.set(0, 5.9, celular ? 13.4 : 12.6);
         camera.lookAt(0, 1.65, -14.5);
         camera.updateProjectionMatrix();
-    }, [camera]);
+    }, [camera, size.width]);
     return null;
 }
 function PetalaFormato({ pos, escala, angulo = 0, cor, brilho = false, }) {
@@ -5846,18 +5851,21 @@ export default function JardimRush() {
     // ==========================================
     const abaLargura = Math.min(width - 24, 740);
     // A corrida ganha espaço sem mudar o tamanho das demais abas.
+    const celularCompacto = width < 600;
     const telaAmpla = width >= 768;
-    const larguraCorrida = Math.min(Math.max(1, width - 18), 1120);
-    const tamanhoCena = telaAmpla
-        ? saturar(height * 0.68, 450, 760)
-        : saturar(height * 0.60, 365, 575);
+    const larguraCorrida = Math.min(Math.max(1, width - (celularCompacto ? 12 : 18)), 1120);
+    const tamanhoCena = celularCompacto
+        ? saturar(height * 0.46, 275, 415)
+        : telaAmpla
+            ? saturar(height * 0.68, 450, 760)
+            : saturar(height * 0.60, 365, 575);
     return (<View style={[
             styles.tela,
             { backgroundColor: cores.fundo },
         ]}>
       <StatusBar barStyle={temaEscuro ? 'light-content' : 'dark-content'} backgroundColor={cores.fundo}/>
 
-      <View style={styles.cabecalho}>
+      {(!celularCompacto || !jogando) && <View style={styles.cabecalho}>
         <Text style={[styles.micro, { color: cores.primario }]}>
           ✦ SEU MUNDO DE AUTOCUIDADO ✦
         </Text>
@@ -5870,10 +5878,10 @@ export default function JardimRush() {
         ]}>
           Corra, cultive, personalize e evolua seu jardim.
         </Text>
-      </View>
+      </View>}
 
       {/* ABAS */}
-      <View style={[
+      {(!celularCompacto || !jogando) && <View style={[
             styles.abas,
             {
                 backgroundColor: cores.card,
@@ -5898,7 +5906,7 @@ export default function JardimRush() {
                     : '🦋 Borboletas'}
             </Text>
           </TouchableOpacity>))}
-      </View>
+      </View>}
 
       {/* CORRIDA */}
       {aba === 'corrida' ? (<ScrollView style={styles.rolagem} contentContainerStyle={styles.areaCorrida} keyboardShouldPersistTaps="handled">
@@ -5932,7 +5940,7 @@ export default function JardimRush() {
               </View>
             </View>)}
           {/* Placar só durante a corrida; a seleção e a vitória ficam limpas. */}
-          {jogando && <View style={[styles.painel, cartao, { width: larguraCorrida, maxWidth: larguraCorrida }]}>
+          {jogando && <View style={[styles.painel, cartao, { width: larguraCorrida, maxWidth: larguraCorrida }, celularCompacto && { paddingVertical: 5, paddingHorizontal: 6 }]}>
             {[
                     ['🏃', `${distancia} m`, 'DISTÂNCIA'],
                     ['🪙', String(moedasCorrida), 'MOEDAS'],
@@ -5964,10 +5972,10 @@ export default function JardimRush() {
                 },
             ]} {...gestos.panHandlers}>
             {!resultado && <Canvas key={partidaId} camera={{
-                    fov: 62,
+                    fov: celularCompacto ? (width < 390 ? 80 : 76) : 62,
                     near: 0.1,
                     far: 235,
-                    position: [0, 5.9, 12.6],
+                    position: [0, 5.9, celularCompacto ? 13.4 : 12.6],
                 }} gl={{ antialias: true }}>
               <MundoCorrida ativo={jogando} genero={genero} fase={faseCorrida} pista={pista} pulando={pulando} progresso={progresso} deslizando={deslizando} escaparTentativa={escaparTentativa} aoAtualizar={(d, m, s) => {
                     setDistancia(d);
@@ -6098,10 +6106,40 @@ export default function JardimRush() {
                   </View>
                 </ScrollView>
               </View>)}
+
+            {/* Controles grandes, dentro da area 3D, para nao cortar no celular. */}
+            {jogando && celularCompacto && <View pointerEvents="box-none" style={styles.controlesSobreJogo}>
+              <View style={styles.grupoControleMobile}>
+                <TouchableOpacity onPress={() => mover(-1)} activeOpacity={0.7}
+                  accessibilityRole="button" accessibilityLabel="Mover para esquerda"
+                  style={[styles.botaoControleMobile, { backgroundColor: corPrimaria }]}>
+                  <Text style={styles.iconeControleMobile}>◀</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => mover(1)} activeOpacity={0.7}
+                  accessibilityRole="button" accessibilityLabel="Mover para direita"
+                  style={[styles.botaoControleMobile, { backgroundColor: corPrimaria }]}>
+                  <Text style={styles.iconeControleMobile}>▶</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.grupoControleMobile}>
+                <TouchableOpacity onPress={pular} activeOpacity={0.7}
+                  accessibilityRole="button" accessibilityLabel="Pular"
+                  style={[styles.botaoControleMobile, { backgroundColor: corPrimaria }]}>
+                  <Text style={styles.iconeControleMobile}>⬆</Text>
+                  <Text style={styles.rotuloControleMobile}>PULAR</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={deslizar} activeOpacity={0.7}
+                  accessibilityRole="button" accessibilityLabel="Deslizar"
+                  style={[styles.botaoControleMobile, { backgroundColor: corPrimaria }]}>
+                  <Text style={styles.iconeControleMobile}>⬇</Text>
+                  <Text style={styles.rotuloControleMobile}>DESLIZAR</Text>
+                </TouchableOpacity>
+              </View>
+            </View>}
           </View>
 
-          {/* Controles não aparecem na tela de escolha nem na vitória. */}
-          {jogando && <View style={styles.controles}>
+          {/* No computador os controles continuam fora da cena. */}
+          {jogando && !celularCompacto && <View style={styles.controles}>
             <Botao texto="◀" onPress={() => mover(-1)} disabled={!jogando} cor={corPrimaria}/>
             <Botao texto="⬆ PULAR" onPress={pular} disabled={!jogando} cor={corPrimaria}/>
             <Botao texto="⬇ DESLIZAR" onPress={deslizar} disabled={!jogando} cor={corPrimaria}/>
@@ -7099,6 +7137,48 @@ const styles = StyleSheet.create({
         marginTop: 10,
         marginBottom: 4,
         flexWrap: 'wrap',
+    },
+    controlesSobreJogo: {
+        position: 'absolute',
+        left: 8,
+        right: 8,
+        bottom: 13,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+    },
+    grupoControleMobile: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    botaoControleMobile: {
+        width: 53,
+        height: 58,
+        borderRadius: 17,
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.85)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#201134',
+        shadowOpacity: 0.30,
+        shadowRadius: 5,
+        elevation: 5,
+    },
+    iconeControleMobile: {
+        fontSize: 25,
+        lineHeight: 29,
+        color: '#FFFFFF',
+        fontWeight: '900',
+        textAlign: 'center',
+    },
+    rotuloControleMobile: {
+        fontSize: 8,
+        lineHeight: 11,
+        letterSpacing: 0.1,
+        color: '#FFFFFF',
+        fontWeight: '900',
+        textAlign: 'center',
     },
     dicaControles: {
         fontSize: 11,
