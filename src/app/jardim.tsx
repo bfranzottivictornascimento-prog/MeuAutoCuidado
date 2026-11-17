@@ -49,14 +49,20 @@ const MUNDO_FLOR: Record<number, string> = {
   7: 'flor_meia_lua', 8: 'flor_brasas', 9: 'flor_prisma',
   10: 'lirio_celestial', 11: 'camelia_glacial', 12: 'flor_ponteiros',
   13: 'rosa_deserto', 14: 'flor_neon', 15: 'orquidea_galactica',
+  // Retratos para os cinco mundos adicionais (16 a 20).
+  // Usam imagens já existentes no arquivo, sem dependências extras.
+  16: 'orquidea_azul', 17: 'camelia_glacial', 18: 'rosa_deserto',
+  19: 'orquidea_ametista', 20: 'sakura_lunar',
 };
 
 function FlorRetrato({ tipo = 'rosa', mundo, tamanho = 72, radius = 14, style }: {
   tipo?: string; mundo?: number; tamanho?: number; radius?: number; style?: any;
 }) {
-  const chave = tipo === 'flor_mundo' ? MUNDO_FLOR[mundo || 1] : tipo;
+  const nomePedido = tipo === 'flor_mundo' ? MUNDO_FLOR[mundo || 1] : tipo;
+  // Evita chamar .replace() em um mundo sem retrato configurado.
+  const chave = nomePedido && FLORES_EMBUTIDAS[nomePedido] ? nomePedido : 'rosa';
   return <Image
-    source={FLORES_EMBUTIDAS[chave] || FLORES_EMBUTIDAS.rosa}
+    source={FLORES_EMBUTIDAS[chave]}
     resizeMode="cover"
     accessibilityLabel={`Ilustração botânica: ${chave.replace(/_/g, ' ')}`}
     style={[{
@@ -88,9 +94,14 @@ const FASES_VISUAIS = [
     { nome: 'Deserto das Miragens', chao: '#E8C683', terra: '#D5A36C', ceu: '#F7DFB5', flor: '#F7B66A', roupaF: '#DFA66C', roupaM: '#947955', detalhe: '#FFE6B0', cabelo: '#644B3C', tipo: 'deserto', vilao: 'Escorpião de Areia', nomeF: 'Guardiã das Dunas', nomeM: 'Guardião das Dunas', icone: '🏜️' },
     { nome: 'Reino Neon', chao: '#1E3152', terra: '#32486B', ceu: '#10182F', flor: '#FF68CF', roupaF: '#B049D4', roupaM: '#3B8CC8', detalhe: '#69F7F2', cabelo: '#D47BCF', tipo: 'neon', vilao: 'Drone Fantasma', nomeF: 'Pilota Neon', nomeM: 'Piloto Neon', icone: '🌃' },
     { nome: 'Galáxia Eterna', chao: '#34315F', terra: '#555289', ceu: '#161332', flor: '#C5A9FF', roupaF: '#8B70D2', roupaM: '#5661AC', detalhe: '#E6D9FF', cabelo: '#BAC5FF', tipo: 'galaxia', vilao: 'Ser da Nebulosa', nomeF: 'Navegadora Galáctica', nomeM: 'Navegador Galáctico', icone: '🌌' },
+    { nome: 'Floresta Bioluminescente', chao: '#183F42', terra: '#315C56', ceu: '#102E43', flor: '#6FFFD1', roupaF: '#45C6B4', roupaM: '#309B91', detalhe: '#B4FFF1', cabelo: '#2A5071', tipo: 'bioluminescente', vilao: 'Rainha dos Besouros Sombrios', nomeF: 'Guardiã dos Vagalumes', nomeM: 'Guardião dos Vagalumes', icone: '🍃' },
+    { nome: 'Cidade das Nuvens', chao: '#B7D9EE', terra: '#E7D2EB', ceu: '#A4D7FA', flor: '#D9C6FF', roupaF: '#B2A6EE', roupaM: '#72A6D7', detalhe: '#FFFFFF', cabelo: '#AB8EB5', tipo: 'nuvens', vilao: 'Arconte das Tempestades', nomeF: 'Princesa dos Ventos', nomeM: 'Príncipe dos Ventos', icone: '☁️' },
+    { nome: 'Vale dos Dragões', chao: '#60505B', terra: '#98645D', ceu: '#D99B91', flor: '#FFBE8C', roupaF: '#D96E6D', roupaM: '#905875', detalhe: '#FFE0AE', cabelo: '#573648', tipo: 'dragoes', vilao: 'Dragão de Obsidiana', nomeF: 'Domadora das Chamas', nomeM: 'Domador das Chamas', icone: '🐉' },
+    { nome: 'Biblioteca Mística', chao: '#4F466F', terra: '#826E93', ceu: '#44365F', flor: '#DCC3FF', roupaF: '#8E75C2', roupaM: '#7164A8', detalhe: '#FFE4A2', cabelo: '#433154', tipo: 'biblioteca', vilao: 'Bibliotecário das Sombras', nomeF: 'Feiticeira dos Livros', nomeM: 'Feiticeiro dos Livros', icone: '📚' },
+    { nome: 'Santuário das Borboletas', chao: '#B5E4CC', terra: '#EAC7DC', ceu: '#D9CFFF', flor: '#F8A8E2', roupaF: '#C47FDF', roupaM: '#8D9BDD', detalhe: '#FFF1AC', cabelo: '#8A70B4', tipo: 'borboletas', vilao: 'Imperatriz do Eclipse', nomeF: 'Rainha das Borboletas', nomeM: 'Rei das Borboletas', icone: '🦋' },
 ];
 const visualFase = (fase) => FASES_VISUAIS[(fase - 1) % FASES_VISUAIS.length];
-const LIMITE_FASES = 15;
+const LIMITE_FASES = 20;
 const TEMPO_FASE = 60;
 const TEMPO_COLETA = TEMPO_FASE - 2; // 58 segundos com itens; só 2 segundos atravessando o portão
 const TEMPO_TRAVESSIA = 2.0;
@@ -112,6 +123,11 @@ const OBSTACULOS_TEMATICOS = [
     { barra: 'Arco de pedra', movel: 'Pedra rolante', ataque: 'Rajada de areia', armadilha: 'Areia movediça', textura: '#F3C17F' },
     { barra: 'Portal laser', movel: 'Drone circular', ataque: 'Pulso elétrico', armadilha: 'Grade elétrica', textura: '#FD4AB9' },
     { barra: 'Arco espacial', movel: 'Asteroide', ataque: 'Pulso estelar', armadilha: 'Campo gravitacional', textura: '#C8ACFF' },
+    { barra: 'Galho de luz', movel: 'Cogumelo saltitante', ataque: 'Nuvem de esporos', armadilha: 'Raízes fluorescentes', textura: '#63FDD9' },
+    { barra: 'Arco de vento', movel: 'Nuvem giratória', ataque: 'Raio de tempestade', armadilha: 'Turbilhão de ar', textura: '#D7C1FF' },
+    { barra: 'Arco de ossos', movel: 'Pedra de magma', ataque: 'Sopro do dragão', armadilha: 'Grilhões de obsidiana', textura: '#FF956A' },
+    { barra: 'Estante tombada', movel: 'Livro encantado', ataque: 'Feitiço de páginas', armadilha: 'Correntes de runas', textura: '#DEB6FF' },
+    { barra: 'Arco de asas', movel: 'Cristal flutuante', ataque: 'Eclipse encantado', armadilha: 'Casulo das sombras', textura: '#FBA6E4' },
 ];
 const obstaculosDaFase = (fase) => OBSTACULOS_TEMATICOS[Math.max(0, Math.min(LIMITE_FASES - 1, fase - 1))];
 const BORBOLETAS_DE_FASE = [
@@ -130,6 +146,11 @@ const BORBOLETAS_DE_FASE = [
     { id: 'fase_miragem_dourada', nome: 'Miragem Dourada', raridade: 'lendaria', cor: '#F6C06D', detalhe: '#FFE9BD', efeito: 'brilho' },
     { id: 'fase_pulso_neon', nome: 'Pulso Neon', raridade: 'lendaria', cor: '#F65EC8', detalhe: '#5EFFF7', efeito: 'arcoiris' },
     { id: 'fase_nebulosa_infinita', nome: 'Nebulosa Infinita', raridade: 'lendaria', cor: '#A2A3FF', detalhe: '#E4B5FF', efeito: 'brilho' },
+    { id: 'fase_luz_esmeralda', nome: 'Luz Esmeralda', raridade: 'lendaria', cor: '#73FDD4', detalhe: '#F5FFF7', efeito: 'brilho' },
+    { id: 'fase_serafina_dos_ventos', nome: 'Serafina dos Ventos', raridade: 'lendaria', cor: '#A2DAFF', detalhe: '#EBC7FF', efeito: 'transparente' },
+    { id: 'fase_draconica_rubi', nome: 'Dracônica Rubi', raridade: 'lendaria', cor: '#F98583', detalhe: '#FFD18B', efeito: 'brilho' },
+    { id: 'fase_sabedoria_arcana', nome: 'Sabedoria Arcana', raridade: 'lendaria', cor: '#B69BFF', detalhe: '#FFE6AC', efeito: 'brilho' },
+    { id: 'fase_imperatriz_eterna', nome: 'Imperatriz Eterna', raridade: 'lendaria', cor: '#F89BD9', detalhe: '#A7EFFF', efeito: 'arcoiris' },
 ];
 const ZERO = {
     semente: 0,
@@ -168,7 +189,7 @@ const plantasCatalogo = [
     { nome: 'Flor de Cristal', emoji: '🌼', preco: 0, cor: '#A7E7FF', tipo: 'flor_cristal' },
     { nome: 'Flor Fênix', emoji: '🌺', preco: 0, cor: '#FF9857', tipo: 'flor_fenix' },
     { nome: 'Sakura Lunar', emoji: '🌸', preco: 0, cor: '#F7C4DF', tipo: 'sakura_lunar' },
-    // Espécies compráveis dos 15 mundos. Adicionadas APÓS os índices históricos 0..18.
+    // Espécies compráveis dos 20 mundos. Adicionadas APÓS os índices históricos 0..18.
     { nome: 'Flor de Cerejeira Imperial', emoji: '🌸', preco: 215, cor: '#F9A5C8', tipo: 'flor_mundo', mundo: 1 },
     { nome: 'Flor das Fadas do Bosque', emoji: '🌼', preco: 235, cor: '#BE8AF5', tipo: 'flor_mundo', mundo: 2 },
     { nome: 'Flor de Açúcar', emoji: '🌺', preco: 245, cor: '#FF9CCD', tipo: 'flor_mundo', mundo: 3 },
@@ -184,6 +205,11 @@ const plantasCatalogo = [
     { nome: 'Flor das Miragens', emoji: '🌹', preco: 440, cor: '#F6C47F', tipo: 'flor_mundo', mundo: 13 },
     { nome: 'Orquídea Neon', emoji: '🌺', preco: 470, cor: '#F967D5', tipo: 'flor_mundo', mundo: 14 },
     { nome: 'Orquídea da Galáxia', emoji: '🌸', preco: 495, cor: '#AFABFF', tipo: 'flor_mundo', mundo: 15 },
+    { nome: 'Lírio dos Vagalumes', emoji: '🌿', preco: 520, cor: '#76FAD2', tipo: 'flor_mundo', mundo: 16 },
+    { nome: 'Camélia dos Ventos', emoji: '🌼', preco: 540, cor: '#DAC7FA', tipo: 'flor_mundo', mundo: 17 },
+    { nome: 'Rosa Dracônica', emoji: '🌹', preco: 570, cor: '#FF957D', tipo: 'flor_mundo', mundo: 18 },
+    { nome: 'Orquídea Arcana', emoji: '🌸', preco: 610, cor: '#B99CFC', tipo: 'flor_mundo', mundo: 19 },
+    { nome: 'Flor das Asas Eternas', emoji: '🦋', preco: 660, cor: '#F5A1DE', tipo: 'flor_mundo', mundo: 20 },
 ];
 // Os índices originais permanecem intactos para preservar os jardins salvos.
 const PRIMEIRA_FLOR_RARA = 12;
@@ -232,7 +258,7 @@ const BORBOLETAS = [
 ];
 const BORBOLETAS_MUNDOS = BORBOLETAS.filter(b => b.id.startsWith('fase_'));
 const BORBOLETAS_BAUS = BORBOLETAS.filter(b => !b.id.startsWith('fase_'));
-const NOME_COLECAO_MUNDOS = '🦋 Guardiãs dos Quinze Mundos';
+const NOME_COLECAO_MUNDOS = '🦋 Guardiãs dos Vinte Mundos';
 const ORDEM_RARIDADE = ['comum', 'incomum', 'rara', 'ultra', 'lendaria'];
 const CHANCES = {
     comum: 55, incomum: 25, rara: 12, ultra: 6, lendaria: 2,
@@ -263,6 +289,11 @@ const ARTE_MUNDOS = [
     { sol: '#FFF1C8', fill: '#CFA16A', neon: '#F8D28C', pista: '#D8B177', brilho: 0.32 },
     { sol: '#BDA9FF', fill: '#2B315F', neon: '#FF4ED4', pista: '#32466E', brilho: 0.82 },
     { sol: '#C3CEFF', fill: '#423B8E', neon: '#A6A1FF', pista: '#6462A3', brilho: 0.74 },
+    { sol: '#A7FFF0', fill: '#123E45', neon: '#56F4C6', pista: '#255858', brilho: 0.78 },
+    { sol: '#FFFFFF', fill: '#9FC1EB', neon: '#E9C6FF', pista: '#BCD8E6', brilho: 0.60 },
+    { sol: '#FFD7A1', fill: '#623E55', neon: '#FF815A', pista: '#7B5158', brilho: 0.77 },
+    { sol: '#FFE8CA', fill: '#594A87', neon: '#C79DFF', pista: '#6B5D8E', brilho: 0.73 },
+    { sol: '#FFF7CE', fill: '#9CBADD', neon: '#FFA9E6', pista: '#D3BDD9', brilho: 0.91 },
 ];
 const arteMundo = (fase) => ARTE_MUNDOS[(fase - 1) % ARTE_MUNDOS.length];
 // Aparência individual: seis silhuetas x seis ornamentos, com proporções e
@@ -325,8 +356,8 @@ const chaveBorboletas = (email) => `@MeuAutoCuidado:rush:borboletas:${email}`;
 function CameraCorrida() {
     const { camera } = useThree();
     useEffect(() => {
-        camera.position.set(0, 6.1, 13.0);
-        camera.lookAt(0, 1.45, -14.5);
+        camera.position.set(0, 5.9, 12.6);
+        camera.lookAt(0, 1.65, -14.5);
         camera.updateProjectionMatrix();
     }, [camera]);
     return null;
@@ -1186,6 +1217,30 @@ function ArmadilhaDoMundo({ item, fase }) {
           <mesh position={[0,.85,0]} rotation={[.7,.4,0]}><torusGeometry args={[1.05,.1,10,36]}/><meshStandardMaterial color="#D8C8FF" emissive="#8E79C8" emissiveIntensity={.32}/></mesh>
           {[-.7,.7].map(x=><mesh key={x} position={[x,1.6,0]}><sphereGeometry args={[.17,10,8]}/><meshBasicMaterial color="#F6ECFF"/></mesh>)}
         </>}
+        {t==='bioluminescente' && <>
+          <mesh position={[0,.10,0]} rotation={[-Math.PI/2,0,0]}><ringGeometry args={[.45,.93,18]}/><meshStandardMaterial color="#46B895" emissive="#53F6C6" emissiveIntensity={.52} side={THREE.DoubleSide}/></mesh>
+          {[-.75,-.25,.24,.76].map((x,i)=><mesh key={i} position={[x,.48,.12]} rotation={[0,0,x*.45]}><coneGeometry args={[.18,.94+(i%2)*.28,8]}/><meshStandardMaterial color={i%2?'#2D8D86':'#85FFD6'} emissive="#32D5AA" emissiveIntensity={.55}/></mesh>)}
+        </>}
+        {t==='nuvens' && <>
+          {[-.60,0,.60].map((x,i)=><mesh key={i} position={[x,.52+(i%2)*.19,0]}><sphereGeometry args={[.43,14,11]}/><meshStandardMaterial color="#C0B4E6" transparent opacity={.93}/></mesh>)}
+          <mesh position={[0,1.22,.11]} rotation={[0,0,.16]}><coneGeometry args={[.28,1.05,3]}/><meshStandardMaterial color="#FFE49A" emissive="#E8C35D" emissiveIntensity={.66}/></mesh>
+        </>}
+        {t==='dragoes' && <>
+          {[-.6,0,.6].map((x,i)=><mesh key={i} position={[x,.67+(i===1?.33:0),0]} rotation={[0,0,x*.35]}><coneGeometry args={[.25,1.4,5]}/><meshStandardMaterial color="#352A3D" emissive="#C94C37" emissiveIntensity={.25}/></mesh>)}
+          <mesh position={[0,.05,0]} rotation={[-Math.PI/2,0,0]}><ringGeometry args={[.47,.92,18]}/><meshBasicMaterial color="#FF9565" side={THREE.DoubleSide}/></mesh>
+        </>}
+        {t==='biblioteca' && <>
+          {[-.7,.7].map(x=><mesh key={x} position={[x,.55,0]}><boxGeometry args={[.28,1.15,.45]}/><meshStandardMaterial color="#6A4A87" emissive="#AD7CD7" emissiveIntensity={.3}/></mesh>)}
+          <mesh position={[0,.73,.17]} rotation={[0,0,.45]}><torusGeometry args={[.65,.1,10,22]}/><meshStandardMaterial color="#E9C99A" emissive="#B98AD9" emissiveIntensity={.43}/></mesh>
+          <mesh position={[0,.75,.18]}><octahedronGeometry args={[.19,0]}/><meshStandardMaterial color="#F6E0FF" emissive="#B18AE4" emissiveIntensity={.76}/></mesh>
+        </>}
+        {t==='borboletas' && <>
+          {[-1,1].map(l=><group key={l}>
+            <mesh position={[l*.48,.75,0]} rotation={[0,0,l*.35]} scale={[.40,.85,.16]}><sphereGeometry args={[1,16,10]}/><meshStandardMaterial color="#F7A4DE" emissive="#E37EC7" emissiveIntensity={.4}/></mesh>
+            <mesh position={[l*.44,.24,.1]} rotation={[0,0,-l*.35]} scale={[.30,.38,.14]}><sphereGeometry args={[1,14,9]}/><meshStandardMaterial color="#ACDFFF"/></mesh>
+          </group>)}
+          <mesh position={[0,.93,.2]}><octahedronGeometry args={[.28,0]}/><meshStandardMaterial color="#FFF0BF" emissive="#F8D9AB" emissiveIntensity={.65}/></mesh>
+        </>}
       </group>
     </group>;
 }
@@ -1280,6 +1335,11 @@ function Item3D({ item, fase }) {
             deserto: { base: '#C18A52', tampa: '#F8C887', metal: '#FBE2A6', brilho: '#FFD487' },
             neon: { base: '#35366D', tampa: '#7049AA', metal: '#FF5EC7', brilho: '#54F9FF' },
             galaxia: { base: '#3D387D', tampa: '#655FC9', metal: '#C5B8FF', brilho: '#D6C4FF' },
+            bioluminescente: { base: '#254A52', tampa: '#367A73', metal: '#72F5C4', brilho: '#A5FFDE' },
+            nuvens: { base: '#B4C2E3', tampa: '#E8E9FF', metal: '#D2A9FF', brilho: '#FFF9FF' },
+            dragoes: { base: '#623948', tampa: '#9F5656', metal: '#F49B61', brilho: '#FFC184' },
+            biblioteca: { base: '#564366', tampa: '#9675AC', metal: '#E8C386', brilho: '#E6BAFF' },
+            borboletas: { base: '#A77FC5', tampa: '#E2B8E6', metal: '#FFE5B5', brilho: '#FFB4E4' },
         };
         const a = aparencias[tema];
         const doce = tema === 'doces';
@@ -1434,6 +1494,26 @@ function Item3D({ item, fase }) {
           {t === 'galaxia' && <>
             <mesh position={[0,.75,0]} rotation={[.25,.23,0]}><icosahedronGeometry args={[.72,0]}/><meshStandardMaterial color="#9A8AE9" metalness={.38} emissive="#564DC5" emissiveIntensity={.44}/></mesh>
             <mesh position={[0,.80,0]} rotation={[.75,.15,.4]}><torusGeometry args={[1.0,.10,10,36]}/><meshStandardMaterial color="#DBB9FF" emissive="#947DE9" emissiveIntensity={.55}/></mesh>
+          </>}
+          {t === 'bioluminescente' && <>
+            <mesh position={[0,.48,0]}><icosahedronGeometry args={[.68,1]}/><meshStandardMaterial color="#2E716C" emissive="#3CBF91" emissiveIntensity={.37}/></mesh>
+            {[-.46,.46].map(x=><mesh key={x} position={[x,.92,0]}><coneGeometry args={[.18,.8,7]}/><meshStandardMaterial color="#ADFFCD" emissive="#54DBB1" emissiveIntensity={.42}/></mesh>)}
+          </>}
+          {t === 'nuvens' && <>
+            {[-.4,.3,.62].map((x,i)=><mesh key={i} position={[x,.63+(i%2)*.2,0]}><sphereGeometry args={[.42,14,10]}/><meshStandardMaterial color="#E7E7FF"/></mesh>)}
+            <mesh position={[0,1.13,.25]}><coneGeometry args={[.25,.62,3]}/><meshStandardMaterial color="#F8DF91" emissive="#F6CD65" emissiveIntensity={.45}/></mesh>
+          </>}
+          {t === 'dragoes' && <>
+            <mesh position={[0,.42,0]}><dodecahedronGeometry args={[.79,0]}/><meshStandardMaterial color="#68424B" emissive="#BF5848" emissiveIntensity={.27}/></mesh>
+            {[-.41,.42].map(x=><mesh key={x} position={[x,1.10,0]}><coneGeometry args={[.26,.82,6]}/><meshStandardMaterial color="#F6A571"/></mesh>)}
+          </>}
+          {t === 'biblioteca' && <>
+            <mesh position={[0,.64,0]} rotation={[0,.25,.15]}><boxGeometry args={[1.06,1.25,.46]}/><meshStandardMaterial color="#684E8D"/></mesh>
+            <mesh position={[0,.70,.29]}><torusGeometry args={[.30,.07,10,22]}/><meshStandardMaterial color="#EFCE9D" emissive="#BA8FD6" emissiveIntensity={.4}/></mesh>
+          </>}
+          {t === 'borboletas' && <>
+            {[-1,1].map(l=><mesh key={l} position={[l*.39,.80,0]} rotation={[0,0,l*.25]} scale={[.47,.74,.2]}><sphereGeometry args={[1,16,11]}/><meshStandardMaterial color={l>0?'#B8EEFF':'#EFA8DF'} emissive="#D48CD8" emissiveIntensity={.31}/></mesh>)}
+            <mesh position={[0,.68,.23]}><octahedronGeometry args={[.25,0]}/><meshStandardMaterial color="#FFF4CD"/></mesh>
           </>}
           {chave && <mesh position={[0,1.90,0]}><sphereGeometry args={[.16,9,8]}/><meshBasicMaterial color="#FF385C"/></mesh>}
         </group>;
@@ -1841,6 +1921,61 @@ function PaisagemLateral({ fase, variante = 0, lado = 1 }) {
     <mesh position={[0, 4.7, 0]}><sphereGeometry args={[.23, 12, 10]}/><M cor="#FFF6CC" emissive={.4}/></mesh>
   </group>;
 }
+// Estruturas exclusivas dos mundos 16-20. Mantidas nas margens, sem bloquear as pistas.
+// jardim=true reaproveita o tema no jardim 3D em tamanho reduzido.
+function CenografiaDosCincoMundos({ fase, jardim = false }) {
+    const tipo = visualFase(fase).tipo;
+    if (!['bioluminescente','nuvens','dragoes','biblioteca','borboletas'].includes(tipo)) return null;
+    const luz = arteMundo(fase).neon;
+    const locais = jardim ? [{x:-12.2,z:-9.8},{x:12.2,z:-9.8}] :
+        [{x:-19.5,z:-60},{x:19.5,z:-92},{x:-23.5,z:-137},{x:23.5,z:-171}];
+    return <group>
+      {locais.map((p, i) => <group key={i} position={[p.x,0,p.z]} scale={jardim ? [.52,.52,.52] : [1.15,1.15,1.15]}>
+        {tipo === 'bioluminescente' && <group>
+          <mesh position={[0,3.1,0]}><cylinderGeometry args={[.68,1.20,6.2,10]}/><meshStandardMaterial color="#234F51"/></mesh>
+          <mesh position={[0,7.0,0]} scale={[3.4,1.5,3.4]}><sphereGeometry args={[1,22,14]}/><meshStandardMaterial color={i%2?'#6EDEAD':'#2BBAB3'} emissive={luz} emissiveIntensity={.27}/></mesh>
+          <mesh position={[0,6.0,0]}><cylinderGeometry args={[2.4,3.2,.38,20]}/><meshStandardMaterial color="#123A41" emissive={luz} emissiveIntensity={.43}/></mesh>
+          {Array.from({length:8},(_,j)=>{const a=j*Math.PI/4;return <group key={j} position={[Math.cos(a)*2.6,.85,Math.sin(a)*2.6]}>
+            <mesh position={[0,.67,0]}><cylinderGeometry args={[.10,.16,1.4,7]}/><meshStandardMaterial color="#5B9F89"/></mesh>
+            <mesh position={[0,1.50,0]}><sphereGeometry args={[.28,9,7]}/><meshStandardMaterial color="#B6FFE0" emissive={luz} emissiveIntensity={.8}/></mesh>
+          </group>})}
+        </group>}
+        {tipo === 'nuvens' && <group>
+          <mesh position={[0,6.3,0]}><cylinderGeometry args={[3.5,4.7,1.1,12]}/><meshStandardMaterial color="#A2A1CB"/></mesh>
+          {[-2,0,2].map((x,j)=><mesh key={j} position={[x,5.8 + j*.22,0]} scale={[2.1,1.1,1.65]}><sphereGeometry args={[1,16,12]}/><meshStandardMaterial color="#F6F7FF" transparent opacity={.94}/></mesh>)}
+          {[-1.45,1.45].map(x=><mesh key={x} position={[x,8.9,0]}><cylinderGeometry args={[.32,.40,4.0,9]}/><meshStandardMaterial color="#F3E9FF"/></mesh>)}
+          <mesh position={[0,11.5,0]}><coneGeometry args={[2.4,2.2,5]}/><meshStandardMaterial color="#BDA6E7" metalness={.25}/></mesh>
+          <mesh position={[0,12.5,0]}><octahedronGeometry args={[.60,0]}/><meshStandardMaterial color={luz} emissive={luz} emissiveIntensity={.7}/></mesh>
+        </group>}
+        {tipo === 'dragoes' && <group>
+          <mesh position={[0,4.3,0]}><coneGeometry args={[3.4,8.6,6]}/><meshStandardMaterial color="#473447" roughness={.94}/></mesh>
+          <mesh position={[0,8.4,0]}><octahedronGeometry args={[1.20,0]}/><meshStandardMaterial color="#D95E58" emissive={luz} emissiveIntensity={.46}/></mesh>
+          {[-1,1].map(l=><group key={l}><mesh position={[l*1.7,7.5,.45]} rotation={[0,0,l*.36]}><coneGeometry args={[.55,4.0,7]}/><meshStandardMaterial color="#342639"/></mesh>
+            <mesh position={[l*2.0,1.7,1.2]}><icosahedronGeometry args={[1.2,1]}/><meshStandardMaterial color="#BC6D5A"/></mesh></group>)}
+          <mesh position={[0,1,3.0]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[2.1,18]}/><meshStandardMaterial color="#F97D4F" emissive="#F24A31" emissiveIntensity={.55}/></mesh>
+        </group>}
+        {tipo === 'biblioteca' && <group>
+          {[-2.0,2.0].map(l=><mesh key={l} position={[l,4.5,0]}><boxGeometry args={[.65,9.0,1.5]}/><meshStandardMaterial color="#4E3C62"/></mesh>)}
+          <mesh position={[0,8.95,0]}><boxGeometry args={[5.1,.75,1.8]}/><meshStandardMaterial color="#BD9B78"/></mesh>
+          {Array.from({length:4},(_,j)=><group key={j} position={[0,1.4+j*1.9,.35]}>
+            <mesh><boxGeometry args={[3.9,.22,1.2]}/><meshStandardMaterial color="#B18A6F"/></mesh>
+            {Array.from({length:7},(_,k)=><mesh key={k} position={[-1.6+k*.52,.55,0]}><boxGeometry args={[.39,1.1,.58]}/><meshStandardMaterial color={['#806CA8','#AA83B6','#C29F72','#6A648E'][k%4]}/></mesh>)}
+          </group>)}
+          <mesh position={[0,10.1,0]}><octahedronGeometry args={[.62,0]}/><meshStandardMaterial color={luz} emissive={luz} emissiveIntensity={.66}/></mesh>
+        </group>}
+        {tipo === 'borboletas' && <group>
+          {[-1,1].map(l=><group key={l}>
+            <mesh position={[l*2.35,3.2,0]}><cylinderGeometry args={[.42,.58,6.4,12]}/><meshStandardMaterial color="#F5DBF0"/></mesh>
+            <mesh position={[l*2.9,7.6,0]} rotation={[0,0,l*.6]} scale={[1.7,2.5,.32]}><sphereGeometry args={[1,18,12]}/><meshStandardMaterial color={l===1?'#A9EFFF':'#F8B8E9'} emissive={luz} emissiveIntensity={.23}/></mesh>
+            <mesh position={[l*2.3,4.1,.1]} rotation={[0,0,l*-.6]} scale={[1.2,1.8,.28]}><sphereGeometry args={[1,18,12]}/><meshStandardMaterial color="#E4C0FF"/></mesh>
+          </group>)}
+          <mesh position={[0,8.4,0]}><sphereGeometry args={[.75,16,12]}/><meshStandardMaterial color="#FFF5C5" emissive="#FFEAA1" emissiveIntensity={.7}/></mesh>
+          <mesh position={[0,2.0,0]} rotation={[0,0,.16]}><torusGeometry args={[3.4,.14,12,38]}/><meshStandardMaterial color={luz} emissive={luz} emissiveIntensity={.5}/></mesh>
+        </group>}
+      </group>)}
+    </group>;
+}
+
 // Cada mundo possui um perseguidor inteiramente modelado em 3D.
 // Ele corre VISIVELMENTE atrás do herói: próximo da câmera, mas fora da trilha central.
 // 10 modelos de perseguidores com geometrias, membros e animações diferentes.
@@ -1851,12 +1986,18 @@ function VilaoTematico({ fase, ativo, pista, proximidade }) {
     const tema = visualFase(fase).tipo;
     const grupo = useRef(null);
     const animado = useRef(null);
+    const auraPerseguidor = useRef(null);
+    const corMagica = arteMundo(fase).neon;
     const olhos = (x, y, z, escala = 1) => (<group position={[x, y, z]} scale={[escala, escala, escala]}>
       {[-0.18, 0.18].map((lado) => (<group key={lado} position={[lado, 0, 0]}>
           <mesh><sphereGeometry args={[0.11, 12, 10]}/><meshStandardMaterial color="#FFFAEF"/></mesh>
           <mesh position={[0, -0.012, 0.092]}>
             <sphereGeometry args={[0.052, 10, 9]}/>
-            <meshStandardMaterial color="#34233B"/>
+            <meshStandardMaterial color="#351B3B" emissive="#F66AAE" emissiveIntensity={0.68}/>
+          </mesh>
+          <mesh position={[0, .095, .088]} rotation={[0,0,lado * .34]}>
+            <boxGeometry args={[.18,.035,.07]}/>
+            <meshStandardMaterial color="#381F4A" roughness={.6}/>
           </mesh>
         </group>))}
     </group>);
@@ -1880,6 +2021,11 @@ function VilaoTematico({ fase, ativo, pista, proximidade }) {
             animado.current.rotation.z = Math.sin(t * (tema === 'aquatico' ? 2.5 : 6.5)) *
                 (tema === 'arcoiris' ? 0.05 : 0.11);
             animado.current.rotation.x = Math.sin(t * 3) * 0.025;
+        }
+        if (auraPerseguidor.current) {
+            auraPerseguidor.current.rotation.z = t * 0.48;
+            const pulso = 1 + Math.sin(t * 3.3) * .075;
+            auraPerseguidor.current.scale.set(pulso,pulso,pulso);
         }
     });
     return (<group ref={grupo} position={[0, 0, Z_JOGADOR + 3.0]} scale={[0.85, 0.85, 0.85]}>
@@ -2310,6 +2456,68 @@ function VilaoTematico({ fase, ativo, pista, proximidade }) {
               <meshStandardMaterial color="#2B2549" transparent opacity={0.85}/>
             </mesh>
           </group>)}
+        {/* MUNDOS 16-20: cinco novos chefes com corpos e armas próprios. */}
+        {tema === 'bioluminescente' && <group>
+          <mesh position={[0,1.15,0]} scale={[.79,1.15,.62]}><icosahedronGeometry args={[1,1]}/><meshStandardMaterial color="#1D343B" metalness={.35}/></mesh>
+          <mesh position={[0,2.13,.20]}><sphereGeometry args={[.57,20,15]}/><meshStandardMaterial color="#265E65" emissive="#0C6966" emissiveIntensity={.37}/></mesh>
+          {olhos(0,2.15,.67,1.14)}
+          {[-1,1].map(l=><group key={l}>
+            <mesh position={[l*.85,1.35,0]} rotation={[0,0,l*.55]}><capsuleGeometry args={[.21,1.1,8,10]}/><meshStandardMaterial color="#267D70"/></mesh>
+            <mesh position={[l*1.20,.55,.14]} rotation={[0,0,l*.32]}><coneGeometry args={[.27,.85,8]}/><meshStandardMaterial color="#B2FFDC" emissive="#5BFFD0" emissiveIntensity={.43}/></mesh>
+            <mesh position={[l*.40,2.70,.03]} rotation={[0,0,l*-.40]}><coneGeometry args={[.20,1.0,9]}/><meshStandardMaterial color="#59E7C3" emissive="#55E6CA" emissiveIntensity={.55}/></mesh>
+          </group>)}
+          {Array.from({length:4},(_,i)=><mesh key={i} position={[0,1.12-i*.29,-.58-i*.20]}><octahedronGeometry args={[.32-i*.055,0]}/><meshStandardMaterial color="#63F7CC" emissive="#23BD9A" emissiveIntensity={.65}/></mesh>)}
+        </group>}
+        {tema === 'nuvens' && <group>
+          {[-.56,0,.58].map((x,i)=><mesh key={i} position={[x,1.2+(i%2)*.28,0]} scale={[.78,.70,.70]}><sphereGeometry args={[1,16,13]}/><meshStandardMaterial color="#7776B7" emissive="#A48EDD" emissiveIntensity={.18}/></mesh>)}
+          <mesh position={[0,2.13,.18]}><icosahedronGeometry args={[.67,1]}/><meshStandardMaterial color="#655DAB" metalness={.35}/></mesh>
+          {olhos(0,2.20,.65,1.06)}
+          {[-1,1].map(l=><group key={l}>
+            <mesh position={[l*1.0,1.2,.04]} rotation={[0,0,l*.45]}><coneGeometry args={[.35,1.25,3]}/><meshStandardMaterial color="#F9D778" emissive="#F6D55A" emissiveIntensity={.73}/></mesh>
+            <mesh position={[l*.46,2.76,0]} rotation={[0,0,l*.3]}><coneGeometry args={[.25,.86,6]}/><meshStandardMaterial color="#EDF3FF"/></mesh>
+          </group>)}
+          <mesh position={[0,2.98,0]}><octahedronGeometry args={[.27,0]}/><meshStandardMaterial color="#E6CEFF" emissive="#AFA0FF" emissiveIntensity={.95}/></mesh>
+        </group>}
+        {tema === 'dragoes' && <group>
+          <mesh position={[0,1.05,0]} scale={[.80,1.06,.76]}><sphereGeometry args={[1,18,14]}/><meshStandardMaterial color="#3B2A3D" metalness={.2}/></mesh>
+          <mesh position={[0,2.20,.32]} scale={[.65,.53,.80]}><sphereGeometry args={[1,16,13]}/><meshStandardMaterial color="#633748"/></mesh>
+          {olhos(0,2.24,1.02,1.05)}
+          {[-1,1].map(l=><group key={l}>
+            <mesh position={[l*1.20,1.50,-.48]} rotation={[0,0,-l*.6]}><coneGeometry args={[.86,2.30,3]}/><meshStandardMaterial color="#9D4D56" side={THREE.DoubleSide}/></mesh>
+            <mesh position={[l*.38,2.90,0]} rotation={[0,0,-l*.35]}><coneGeometry args={[.22,1.15,8]}/><meshStandardMaterial color="#F3B58F"/></mesh>
+            <mesh position={[l*.65,.30,.30]}><capsuleGeometry args={[.20,.55,7,9]}/><meshStandardMaterial color="#6F4850"/></mesh>
+          </group>)}
+          {Array.from({length:4},(_,i)=><mesh key={i} position={[0,1.75-i*.28,-.70-i*.22]}><coneGeometry args={[.20,.46,7]}/><meshStandardMaterial color="#FF895B" emissive="#C84C30" emissiveIntensity={.47}/></mesh>)}
+          <mesh position={[0,1.79,1.1]} scale={[.52,.24,.42]}><sphereGeometry args={[1,12,8]}/><meshStandardMaterial color="#D46A56"/></mesh>
+        </group>}
+        {tema === 'biblioteca' && <group>
+          <mesh position={[0,1.03,0]}><coneGeometry args={[.93,2.05,12]}/><meshStandardMaterial color="#302C53"/></mesh>
+          <mesh position={[0,1.75,.06]}><cylinderGeometry args={[.42,.71,.97,10]}/><meshStandardMaterial color="#645182"/></mesh>
+          <mesh position={[0,2.23,.10]}><sphereGeometry args={[.54,16,12]}/><meshStandardMaterial color="#B7A1C4"/></mesh>
+          {olhos(0,2.22,.63,1.0)}
+          <mesh position={[0,2.82,0]}><coneGeometry args={[.63,1.0,7]}/><meshStandardMaterial color="#5A446B"/></mesh>
+          {[-1,1].map(l=><mesh key={l} position={[l*.7,1.53,.08]} rotation={[0,0,l*.42]}><capsuleGeometry args={[.15,.84,7,10]}/><meshStandardMaterial color="#9578B8"/></mesh>)}
+          <group position={[1.12,1.38,.55]} rotation={[.35,-.2,.25]}>
+            {[-1,1].map(l=><mesh key={l} position={[l*.27,0,0]} rotation={[0,l*.23,0]}><boxGeometry args={[.51,.70,.08]}/><meshStandardMaterial color={l===1?'#E6CEA2':'#D5B38F'}/></mesh>)}
+            <mesh position={[0,0,.08]}><octahedronGeometry args={[.16,0]}/><meshStandardMaterial color="#D7ABFF" emissive="#BA7DFD" emissiveIntensity={.73}/></mesh>
+          </group>
+        </group>}
+        {tema === 'borboletas' && <group>
+          <mesh position={[0,1.08,0]}><coneGeometry args={[.80,1.9,15]}/><meshStandardMaterial color="#503466" metalness={.17}/></mesh>
+          {[-1,1].map(l=><group key={l}>
+            <mesh position={[l*.95,1.88,-.42]} rotation={[0,0,l*-.52]} scale={[.83,1.22,.17]}><sphereGeometry args={[1,18,12]}/><meshStandardMaterial color="#D78AC9" emissive="#B66CCA" emissiveIntensity={.43}/></mesh>
+            <mesh position={[l*.86,.72,-.36]} rotation={[0,0,l*.28]} scale={[.61,.84,.14]}><sphereGeometry args={[1,16,10]}/><meshStandardMaterial color="#8FA9EC" emissive="#779CEB" emissiveIntensity={.45}/></mesh>
+            <mesh position={[l*.38,2.80,0]}><coneGeometry args={[.17,.89,8]}/><meshStandardMaterial color="#FFE8A7" metalness={.58}/></mesh>
+            <mesh position={[l*.68,1.21,.22]} rotation={[0,0,l*.25]}><capsuleGeometry args={[.13,.65,7,10]}/><meshStandardMaterial color="#9966B7"/></mesh>
+          </group>)}
+          <mesh position={[0,2.06,.16]}><sphereGeometry args={[.46,16,12]}/><meshStandardMaterial color="#C38BBB"/></mesh>{olhos(0,2.12,.61,.91)}
+          <mesh position={[0,3.0,0]}><octahedronGeometry args={[.34,0]}/><meshStandardMaterial color="#FFF2C1" emissive="#FFCE7D" emissiveIntensity={.81}/></mesh>
+        </group>}
+        {/* Aura e foco mágico animados para TODOS os perseguidores, inclusive os anteriores. */}
+        <group ref={auraPerseguidor} position={[0,1.35,-.70]}>
+          <mesh rotation={[0,0,.12]}><torusGeometry args={[.95,.044,7,32]}/><meshStandardMaterial color={corMagica} emissive={corMagica} emissiveIntensity={.62} transparent opacity={.81}/></mesh>
+          {[-1,1].map(l=><mesh key={l} position={[l*.96,.20,0]}><octahedronGeometry args={[.12,0]}/><meshStandardMaterial color={corMagica} emissive={corMagica} emissiveIntensity={.75}/></mesh>)}
+        </group>
       </group>
     </group>);
 }
@@ -2874,7 +3082,7 @@ function HorizonteTematico({ fase }) {
     </group>;
 }
 // ============================================================================
-// DIREÇÃO DE ARTE — MARCOS ARQUITETÔNICOS: 15 SILHUETAS DISTINTAS
+// DIREÇÃO DE ARTE — MARCOS ARQUITETÔNICOS: SILHUETAS DISTINTAS
 // Eles ficam em terreno próprio, a >= 20 unidades do centro da pista.
 // Nenhum elemento pode atravessar os 3 trilhos jogáveis.
 // ============================================================================
@@ -3394,6 +3602,7 @@ const CenarioCorrida = React.memo(function CenarioCorrida({ ativo, velocidadeRef
     })[t] || visual.terra;
     const trilhaBorda = arteMundo(fase).neon;
     return <group>
+      <CenografiaDosCincoMundos fase={fase}/>
       <HorizonteTematico fase={fase}/>
       {/* Fundo de terreno amplo, em vez de várias chapas sobrepostas. */}
       <mesh rotation={[-Math.PI/2,0,0]} position={[0,-.23,-119]}>
@@ -3523,6 +3732,11 @@ const DestinoFinal = React.memo(function DestinoFinal({ fase, tempoRef, finaliza
         deserto: { parede: '#F4D8A1', escuro: '#B2784E', teto: '#F5A96B', luz: '#FFE4A4', piso: '#E5C38F' },
         neon: { parede: '#3F3D87', escuro: '#1B2254', teto: '#E14CBD', luz: '#56FFEE', piso: '#344974' },
         galaxia: { parede: '#55509A', escuro: '#2A2B60', teto: '#A690F1', luz: '#C2BBFF', piso: '#6560A2' },
+        bioluminescente: { parede: '#315E63', escuro: '#122F3B', teto: '#57DBBD', luz: '#A4FFDC', piso: '#2B5555' },
+        nuvens: { parede: '#F7F4FF', escuro: '#A5A7DC', teto: '#D7BCFC', luz: '#F4E9FF', piso: '#CDDAEF' },
+        dragoes: { parede: '#85505C', escuro: '#3A273F', teto: '#DC7356', luz: '#FFA36B', piso: '#82545A' },
+        biblioteca: { parede: '#796388', escuro: '#3B3055', teto: '#D9A67C', luz: '#EDD0FF', piso: '#756688' },
+        borboletas: { parede: '#F3D8F2', escuro: '#957FC7', teto: '#D5B0F4', luz: '#FFEFBA', piso: '#D8C1EA' },
     };
     const c = estilos[t] || estilos.cerejeiras;
     const pastel = t === 'doces' || t === 'arcoiris';
@@ -3622,6 +3836,7 @@ const MECANICAS_ARMADILHAS = [
     'prender', 'empurrar', 'grudar', 'empurrar', 'prender',
     'atrasar', 'teleportar', 'queimar', 'empurrar', 'prender',
     'escorregar', 'prender', 'afundar', 'choque', 'gravidade',
+    'grudar', 'empurrar', 'queimar', 'teleportar', 'prender',
 ];
 const mecanicaDaFase = fase => MECANICAS_ARMADILHAS[(fase - 1) % MECANICAS_ARMADILHAS.length];
 
@@ -3675,7 +3890,7 @@ function MundoCorrida({ ativo, genero, pista, pulando, progresso, deslizando, es
     const toquesEscape = useRef(0);
     const proximoEstadoPrisao = useRef(-1);
     const ataqueVilao = useRef(0);
-    const proximaArmadilha = useRef(4.7);
+    const proximaArmadilha = useRef(48.0); // quatro perigos finais, todos com aviso e pista livre
     const [alertaPista, setAlertaPista] = useState(-10);
     const [, atualizar] = useState(0);
     const pistaAtual = useRef(pista);
@@ -3817,15 +4032,50 @@ function MundoCorrida({ ativo, genero, pista, pulando, progresso, deslizando, es
             inserirNaPista('queda', pistaAtual.current, Z_JOGADOR - Math.max(52, vel * 3.8));
             aoPerigo('⚠️ Fenda de queda à frente! Mude de pista ou pule para evitar o vilão!');
         }
-        // Últimos segundos reservados para os itens JÁ visíveis terminarem
-        // o percurso; nada novo brota perto do portão.
+        // RETA FINAL (48 a 58s): desafios continuam até a aproximação do portão.
+        // Perigos com >2s de aviso, sempre em UMA pista e com as outras duas livres.
+        // O último chega ao corredor aos ~57s, antes da travessia final de 2s.
+        if (tempoVivo.current >= proximaArmadilha.current && proximaArmadilha.current <= 54.65) {
+            proximaArmadilha.current += 2.20;
+            const tiposFinais = ['armadilha', 'barra', 'movel', 'espinhos', 'ataque'];
+            const tipoFinal = tiposFinais[(Math.floor(tempoVivo.current * 10) + fase) % tiposFinais.length];
+            const zFinal = Z_JOGADOR - vel * 2.30;
+            // Busca uma pista sem outro objeto próximo, para não criar parede inevitável.
+            const candidatos = [-1, 0, 1].sort(() => Math.random() - 0.5);
+            const livre = candidatos.find(p => !objetos.current.some(o =>
+                !o.coletado && o.pista === p && Math.abs(o.z - zFinal) < 10));
+            // Havendo conflito nas três pistas, escolhe a pista com menos objetos
+            // e desloca APENAS um coletável para o lado, sem sobrepor dois perigos.
+            let pistaFinal = livre;
+            if (pistaFinal === undefined) {
+                pistaFinal = candidatos.find(p =>
+                    !objetos.current.some(o => !o.coletado && o.pista === p &&
+                      ['pedra','tronco','espinhos','armadilha','queda','barra','movel','ataque'].includes(o.tipo) &&
+                      Math.abs(o.z - zFinal) < 11));
+                if (pistaFinal !== undefined) {
+                    for (const obj of objetos.current) {
+                        if (!obj.coletado && obj.pista === pistaFinal && Math.abs(obj.z - zFinal) < 11 &&
+                            ['moeda','agua','semente','fertilizante','flor','escudo'].includes(obj.tipo)) {
+                            obj.z -= 16; // deixa uma nova oportunidade, não exclui o prêmio
+                        }
+                    }
+                }
+            }
+            if (pistaFinal !== undefined) {
+                objetos.current.push({ id: id.current++, tipo: tipoFinal, pista: pistaFinal,
+                    z: zFinal, coletado: false });
+                aoPerigo(`⚠️ Reta final! ${obstaculosDaFase(fase).armadilha} à frente!`);
+                setAlertaPista(pistaFinal);
+            }
+        }
+        // Itens continuam surgindo até perto do portão, com tempo para alcançar o herói.
         const intervaloOnda = Math.max(.91, 1.43 - (fase - 1) * .026);
-        if (tempoVivo.current < TEMPO_COLETA - 2.9 && tempo.current >= intervaloOnda) {
+        if (tempoVivo.current < TEMPO_COLETA - 2.65 && tempo.current >= intervaloOnda) {
             tempo.current = 0;
             const r = Math.random();
             const chanceRisco = Math.min(.35, .15 + (fase - 1) * .013);
-            // Sem novos perigos no trecho final: deixa o jogador coletar até o segundo 58.
-            const perigo = tempoVivo.current < TEMPO_COLETA - 7 && r < chanceRisco;
+            // Perigos mantidos na reta final; nunca ocupam as três pistas.
+            const perigo = tempoVivo.current < TEMPO_COLETA - 3.0 && r < chanceRisco;
             const pistaOnda = perigo ? Math.floor(Math.random() * 3) - 1
                 : Math.random() < .76 ? pistaAtual.current : Math.floor(Math.random() * 3) - 1;
             let tipo;
@@ -4020,8 +4270,8 @@ function MundoCorrida({ ativo, genero, pista, pulando, progresso, deslizando, es
       {objetos.current.map(obj => <ObjetoSuave3D key={obj.id} item={obj} fase={fase}/>)}
     </>);
 }
-// Modelos botânicos próprios dos quinze mundos — espécies adquiridas na floricultura.
-// Flores dos quinze mundos: corolas REAIS com silhuetas individuais.
+// Modelos botânicos próprios dos vinte mundos — espécies adquiridas na floricultura.
+// Flores dos vinte mundos: corolas REAIS com silhuetas individuais.
 // Antes alguns mundos exibiam cogumelos, chamas e cristais no lugar das flores.
 const MODELOS_FLORES_MUNDOS = [
   {petalas:5,  interna:5,   raio:.31,larg:.25,comp:.35,centro:'#E9BA7D',cor2:'#FFF0F6'}, // Sakura
@@ -4039,10 +4289,15 @@ const MODELOS_FLORES_MUNDOS = [
   {petalas:5,  interna:5,   raio:.39,larg:.28,comp:.42,centro:'#D49262',cor2:'#FFDFC0'}, // Miragens
   {petalas:6,  interna:5,   raio:.38,larg:.23,comp:.48,centro:'#FFEA9D',cor2:'#7EFDE4'}, // Neon
   {petalas:5,  interna:5,   raio:.40,larg:.29,comp:.47,centro:'#FFF3CA',cor2:'#E5D5FF'}, // Galáxia
+  {petalas:9,  interna:6,   raio:.36,larg:.13,comp:.49,centro:'#E7FFCC',cor2:'#A3FFE9'}, // Vagalumes
+  {petalas:8,  interna:7,   raio:.33,larg:.19,comp:.51,centro:'#FFF8DA',cor2:'#E6E5FF'}, // Ventos
+  {petalas:7,  interna:6,   raio:.38,larg:.20,comp:.52,centro:'#FFCB83',cor2:'#FFDFBF'}, // Dragões
+  {petalas:10, interna:5,   raio:.30,larg:.14,comp:.50,centro:'#FCE7B2',cor2:'#E6D8FF'}, // Arcana
+  {petalas:12, interna:8,   raio:.40,larg:.15,comp:.42,centro:'#FFF0C9',cor2:'#C5F9FF'}, // Asas eternas
 ];
 function FlorDoMundo3D({ mundo, cor }) {
   // Cada mundo agora usa um desenho de corola ESTRUTURALMENTE diferente, não só outra cor.
-  const d=MODELOS_FLORES_MUNDOS[Math.max(0,Math.min(14,mundo-1))];
+  const d=MODELOS_FLORES_MUNDOS[Math.max(0,Math.min(19,mundo-1))];
   const petals=(n,raio,compr,larg,corPetala,deslocamento=0)=><Coroa quantidade={n} raio={raio} comprimento={compr} largura={larg} cor={corPetala} deslocamento={deslocamento} espessura={.073} brilho={mundo>=7}/>;
   const miolo=(r=.14,material=d.centro)=><mesh position={[0,0,.19]}><sphereGeometry args={[r,14,10]}/><meshStandardMaterial color={material} emissive={mundo>=7?material:'#000000'} emissiveIntensity={mundo>=7?.28:0} roughness={.44}/></mesh>;
   const gota=(x,y,w,h,c,rot=0)=><mesh position={[x,y,.04]} rotation={[0,0,rot]} scale={[w,h,.09]}><sphereGeometry args={[1,12,9]}/><meshStandardMaterial color={c} roughness={.55} emissive={mundo>=14?c:'#000000'} emissiveIntensity={mundo>=14?.24:0}/></mesh>;
@@ -4100,6 +4355,25 @@ function FlorDoMundo3D({ mundo, cor }) {
     case 14: // Orquídea neon: cinco lâminas bioluminescentes
       flor=<>{petals(5,.39,.60,.14,cor)}{petals(5,.18,.43,.095,d.cor2,.28)}{miolo(.20,'#24305C')}
         <mesh position={[0,0,.37]}><torusGeometry args={[.14,.025,8,26]}/><meshStandardMaterial color="#74FFF0" emissive="#74FFF0" emissiveIntensity={.8}/></mesh></>;
+      break;
+    case 16: // Luminescência: pétalas translúcidas e núcleo vivo
+      flor=<>{petals(9,.39,.49,.12,cor)}{petals(6,.23,.33,.11,d.cor2,.26)}{miolo(.18,'#F1FFD2')}
+        {Array.from({length:6},(_,i)=>{const a=i*Math.PI/3;return <mesh key={i} position={[Math.cos(a)*.34,Math.sin(a)*.34,.26]}><sphereGeometry args={[.042,8,7]}/><meshStandardMaterial color="#D9FFEC" emissive="#8AFFC8" emissiveIntensity={.80}/></mesh>})}</>;
+      break;
+    case 17: // Camélia dos ventos: coroa dupla e hélices leves
+      flor=<>{petals(8,.32,.52,.19,cor,.15)}{petals(6,.19,.31,.14,d.cor2,-.15)}{miolo(.15,'#FFF7DC')}
+        {[-1,1].map(l=><mesh key={l} position={[l*.30,-.16,.31]} rotation={[0,0,l*.62]} scale={[.12,.25,.035]}><sphereGeometry args={[1,10,8]}/><meshStandardMaterial color="#FFFFFF" transparent opacity={.8}/></mesh>)}</>;
+      break;
+    case 18: // Rosa dracônica: pétalas pontiagudas e núcleo rubi
+      flor=<>{petals(7,.40,.55,.18,cor)}{petals(7,.24,.35,.14,d.cor2,.2)}{petals(5,.12,.22,.11,'#F86769',.32)}{miolo(.17,'#FFD77A')}</>;
+      break;
+    case 19: // Orquídea arcana: páginas mágicas em espiral
+      flor=<>{petals(10,.37,.48,.14,cor)}{petals(5,.22,.36,.18,d.cor2,.25)}{miolo(.17,'#FFEFB9')}
+        <mesh position={[0,0,.31]} rotation={[0,0,.45]}><torusGeometry args={[.31,.029,8,30,Math.PI*1.74]}/><meshStandardMaterial color="#F7DCA5" emissive="#D5AAFF" emissiveIntensity={.65}/></mesh></>;
+      break;
+    case 20: // Flor de asas: composição em cruz e halo de néctar
+      flor=<>{petals(12,.40,.46,.14,cor)}{petals(8,.22,.28,.13,d.cor2,.18)}{miolo(.20,'#FFF4C1')}
+        {[-1,1].map(l=><mesh key={l} position={[l*.28,.13,.31]} rotation={[0,0,l*.6]} scale={[.20,.32,.060]}><sphereGeometry args={[1,12,9]}/><meshStandardMaterial color="#B6F7FC" emissive="#79DCEE" emissiveIntensity={.52}/></mesh>)}</>;
       break;
     default: // Galáxia: orquídea estelar de asas largas e núcleo cósmico
       flor=<>{gota(-.30,.09,.39,.22,cor,-.55)}{gota(.30,.09,.39,.22,cor,.55)}{gota(0,.29,.23,.36,d.cor2)}{gota(-.16,-.24,.20,.25,cor)}{gota(.16,-.24,.20,.25,d.cor2)}{miolo(.17,'#F4E8FF')}
@@ -4468,6 +4742,7 @@ function MundoJardim({ plantas, abertos, selecionado, decoracoes, borboletasEqui
       <hemisphereLight args={['#FFF7E5', '#80B18A', 1.08]}/>
       <directionalLight position={[8, 16, 8]} intensity={1.85} color="#FFF2D9"/>
 
+      <CenografiaDosCincoMundos fase={fase} jardim/>
       {/* Mundo temático nas margens: o centro do jardim continua reservado aos 12 canteiros. */}
       {[-1,1].map((lado)=><group key={'tema-jardim'+lado} position={[lado*10,0,-4.0]} scale={[.8,.8,.8]}>
         <DecoracaoMundo fase={fase} indice={fase+lado} lado={lado}/>
@@ -4981,7 +5256,7 @@ export default function JardimRush() {
             setMensagem('Cultive todos os canteiros disponíveis até florescer para concluir esta fase.');
             return;
         }
-        if (faseJardim >= LIMITE_FASES) { setMensagem('🌟 Você concluiu todos os quinze jardins!'); return; }
+        if (faseJardim >= LIMITE_FASES) { setMensagem('🌟 Você concluiu todos os vinte jardins!'); return; }
         const proxima = faseJardim + 1;
         setFaseJardimLiberada(n => Math.max(n, proxima));
         const atuais = { ...jardinsRef.current, [faseJardim]: { plantas, abertos, decoracoes } };
@@ -5570,7 +5845,12 @@ export default function JardimRush() {
     // INTERFACE PRINCIPAL
     // ==========================================
     const abaLargura = Math.min(width - 24, 740);
-    const tamanhoCena = saturar(height * 0.43, 285, 435);
+    // A corrida ganha espaço sem mudar o tamanho das demais abas.
+    const telaAmpla = width >= 768;
+    const larguraCorrida = Math.min(Math.max(1, width - 18), 1120);
+    const tamanhoCena = telaAmpla
+        ? saturar(height * 0.68, 450, 760)
+        : saturar(height * 0.60, 365, 575);
     return (<View style={[
             styles.tela,
             { backgroundColor: cores.fundo },
@@ -5598,7 +5878,7 @@ export default function JardimRush() {
             {
                 backgroundColor: cores.card,
                 borderColor: cores.borda,
-                maxWidth: abaLargura,
+                maxWidth: aba === 'corrida' ? larguraCorrida : abaLargura,
             },
         ]}>
         {['corrida', 'jardim', 'borboletas'].map(v => (<TouchableOpacity key={v} disabled={jogando} onPress={() => setAba(v)} style={[
@@ -5622,7 +5902,7 @@ export default function JardimRush() {
 
       {/* CORRIDA */}
       {aba === 'corrida' ? (<ScrollView style={styles.rolagem} contentContainerStyle={styles.areaCorrida} keyboardShouldPersistTaps="handled">
-          {!jogando && (<View style={[styles.cartao, cartao, { paddingVertical: 12, paddingHorizontal: 14 }]}>
+          {!jogando && (<View style={[styles.cartao, cartao, { width: larguraCorrida, maxWidth: larguraCorrida, paddingVertical: 12, paddingHorizontal: 14 }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <TouchableOpacity accessibilityRole="button" accessibilityLabel="Mundo anterior" disabled={primeiraFaseVisivel === 1} onPress={() => moverCarrosselFases(-1)} style={{ width: 46, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center',
                     backgroundColor: primeiraFaseVisivel === 1 ? '#EAE5EE' : cores.suave }}>
@@ -5652,7 +5932,7 @@ export default function JardimRush() {
               </View>
             </View>)}
           {/* Placar só durante a corrida; a seleção e a vitória ficam limpas. */}
-          {jogando && <View style={[styles.painel, cartao]}>
+          {jogando && <View style={[styles.painel, cartao, { width: larguraCorrida, maxWidth: larguraCorrida }]}>
             {[
                     ['🏃', `${distancia} m`, 'DISTÂNCIA'],
                     ['🪙', String(moedasCorrida), 'MOEDAS'],
@@ -5678,16 +5958,16 @@ export default function JardimRush() {
           <View style={[
                 styles.canvasCorrida,
                 {
-                    width: abaLargura,
+                    width: larguraCorrida,
                     height: tamanhoCena,
                     borderRadius: raioCartao,
                 },
             ]} {...gestos.panHandlers}>
             {!resultado && <Canvas key={partidaId} camera={{
-                    fov: 65,
+                    fov: 62,
                     near: 0.1,
                     far: 235,
-                    position: [0, 6.1, 13.0],
+                    position: [0, 5.9, 12.6],
                 }} gl={{ antialias: true }}>
               <MundoCorrida ativo={jogando} genero={genero} fase={faseCorrida} pista={pista} pulando={pulando} progresso={progresso} deslizando={deslizando} escaparTentativa={escaparTentativa} aoAtualizar={(d, m, s) => {
                     setDistancia(d);
@@ -5843,7 +6123,7 @@ export default function JardimRush() {
           </Text>}
 
           {/* MOCHILA */}
-          <View style={[styles.cartao, cartao]}>
+          <View style={[styles.cartao, cartao, { width: larguraCorrida, maxWidth: larguraCorrida }]}>
             <Text style={[styles.subtitulo, { color: cores.texto }]}>
               🎒 Sua mochila
             </Text>
@@ -5903,7 +6183,7 @@ export default function JardimRush() {
                     shadowOpacity:selecionadoJardim?.25:.09,shadowRadius:13,shadowOffset:{width:0,height:5},elevation:selecionadoJardim?5:2}}>
                     <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
                       <View style={{backgroundColor:selecionadoJardim?'rgba(255,255,255,.15)':'#F5EDF7',borderRadius:20,paddingHorizontal:9,paddingVertical:5}}>
-                        <Text style={{fontSize:9,letterSpacing:1.1,fontWeight:'900',color:selecionadoJardim?'#FFE7F4':'#876491'}}>MUNDO {String(f).padStart(2,'0')} / 15</Text>
+                        <Text style={{fontSize:9,letterSpacing:1.1,fontWeight:'900',color:selecionadoJardim?'#FFE7F4':'#876491'}}>MUNDO {String(f).padStart(2,'0')} / {LIMITE_FASES}</Text>
                       </View>
                       <Text style={{fontSize:21}}>{mundo.icone}</Text>
                     </View>
@@ -6122,13 +6402,13 @@ export default function JardimRush() {
           {/* FLORICULTURA */}
           <View style={[styles.cartao, cartao]}>
             <Text style={[styles.subtitulo, { color: cores.texto }]}>
-              🌺 Floricultura • 12 clássicas, {NUMERO_RARAS} raras e 15 flores dos mundos
+              🌺 Floricultura • 12 clássicas, {NUMERO_RARAS} raras e {LIMITE_FASES} flores dos mundos
             </Text>
             <Text style={[
                 styles.miniDescricao,
                 { color: cores.secundario },
             ]}>
-              Compre flores clássicas e espécies dos 15 mundos com moedas. As flores raras vêm do Clube de Conquistas.
+              Compre flores clássicas e espécies dos {LIMITE_FASES} mundos com moedas. As flores raras vêm do Clube de Conquistas.
               Colete o baú durante a corrida e termine a fase para receber uma borboleta!
             </Text>
 

@@ -79,69 +79,6 @@ const HUMORES: Record<
 };
 
 // ============================================
-// ATALHOS SEM MEU ESPAÇO
-// ============================================
-
-const ATALHOS = [
-  {
-    id: 'diario',
-    titulo: 'Meu Diário',
-    descricao: 'Registre seu dia',
-    emoji: '📖',
-    rota: '/diario',
-  },
-  {
-    id: 'relaxamento',
-    titulo: 'Relaxamento',
-    descricao: 'Respire e desacelere',
-    emoji: '🦋',
-    rota: '/relaxamento',
-  },
-  {
-    id: 'evolucao',
-    titulo: 'Evolução',
-    descricao: 'Veja seu progresso',
-    emoji: '📊',
-    rota: '/evolucao',
-  },
-  {
-    id: 'rotina',
-    titulo: 'Minha Rotina',
-    descricao: 'Todos os cuidados',
-    emoji: '✅',
-    rota: '/rotina',
-  },
-  {
-    id: 'agua',
-    titulo: 'Minha Água',
-    descricao: 'Acompanhe sua hidratação',
-    emoji: '💧',
-    rota: '/agua',
-  },
-  {
-    id: 'humor',
-    titulo: 'Meu Humor',
-    descricao: 'Como estou me sentindo',
-    emoji: '💗',
-    rota: '/humor',
-  },
-  {
-    id: 'recompensas',
-    titulo: 'Recompensas',
-    descricao: 'Suas conquistas',
-    emoji: '🏆',
-    rota: '/recompensas',
-  },
-  {
-    id: 'assistente',
-    titulo: 'Assistente',
-    descricao: 'Seu apoio no autocuidado',
-    emoji: '🤖',
-    rota: '/assistente',
-  },
-] as const;
-
-// ============================================
 // FUNÇÕES AUXILIARES
 // ============================================
 
@@ -207,8 +144,6 @@ export default function Inicio() {
     concluidas,
     progresso,
     usuario,
-    respostas,
-    dicasPersonalizadas,
     alternarAtividade,
     sequenciaDias,
     preferencias,
@@ -307,9 +242,9 @@ export default function Inicio() {
     lineHeight: fonte(21),
   };
 
-  // ==========================================
-  // CARREGAR ÁGUA E HUMOR
-  // ==========================================
+// ==========================================
+// CARREGAR ÁGUA E HUMOR
+// ==========================================
 
   const carregarResumo = useCallback(
     async () => {
@@ -337,7 +272,7 @@ export default function Inicio() {
 
         const hoje = dataLocal();
 
-        // Carregar hidratação
+// Carregar hidratação
 
         if (aguaTexto) {
           const dados: DadosAgua =
@@ -376,7 +311,7 @@ export default function Inicio() {
           }
         }
 
-        // Carregar humor do dia
+// Carregar humor do dia
 
         if (humorTexto) {
           const dados: unknown =
@@ -418,9 +353,9 @@ export default function Inicio() {
     }, [carregarResumo])
   );
 
-  // ==========================================
-  // INTERFACE
-  // ==========================================
+// ==========================================
+// INTERFACE
+// ==========================================
 
   return (
     <SafeAreaView
@@ -1295,314 +1230,6 @@ export default function Inicio() {
             )}
           </View>
 
-          {/* ATALHOS */}
-
-          <View style={styles.secao}>
-            <Text
-              style={[
-                styles.etiqueta,
-                { color: cores.primario },
-              ]}
-            >
-              EXPLORE SEU APLICATIVO
-            </Text>
-
-            <Text style={titulo}>
-              Seu espaço de autocuidado
-            </Text>
-
-            <Text
-              style={[
-                descricao,
-                styles.subsecao,
-              ]}
-            >
-              Tudo o que você precisa em um só lugar.
-            </Text>
-
-            <View style={styles.atalhos}>
-              {ATALHOS.map(atalho => (
-                <TouchableOpacity
-                  key={atalho.id}
-                  onPress={() =>
-                    router.push(
-                      atalho.rota as any
-                    )
-                  }
-                  style={[
-                    styles.atalho,
-                    card,
-                    {
-                      width: pequena
-                        ? '100%'
-                        : '48%',
-                    },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.icone,
-                      {
-                        backgroundColor:
-                          cores.suave,
-                        borderRadius:
-                          raioMenor,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 27,
-                      }}
-                    >
-                      {atalho.emoji}
-                    </Text>
-                  </View>
-
-                  <Text
-                    style={{
-                      color: cores.texto,
-                      fontSize: fonte(16),
-                      fontWeight: '800',
-                      marginTop: 12,
-                    }}
-                  >
-                    {atalho.titulo}
-                  </Text>
-
-                  <Text
-                    style={[
-                      descricao,
-                      { marginTop: 6 },
-                    ]}
-                  >
-                    {atalho.descricao}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.link,
-                      {
-                        color: cores.primario,
-                        fontSize: fonte(13),
-                      },
-                    ]}
-                  >
-                    Acessar →
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* DICAS PERSONALIZADAS */}
-
-          <View style={styles.secao}>
-            <Text
-              style={[
-                styles.etiqueta,
-                { color: cores.primario },
-              ]}
-            >
-              FEITO PARA VOCÊ
-            </Text>
-
-            <Text style={titulo}>
-              Suas dicas de autocuidado
-            </Text>
-
-            <Text
-              style={[
-                descricao,
-                styles.subsecao,
-              ]}
-            >
-              Sugestões alinhadas às suas respostas.
-            </Text>
-
-            {!respostas ? (
-              <View
-                style={[
-                  styles.card,
-                  card,
-                ]}
-              >
-                <Text style={{ fontSize: 28 }}>
-                  💜
-                </Text>
-
-                <Text
-                  style={{
-                    color: cores.texto,
-                    fontSize: fonte(17),
-                    fontWeight: '800',
-                    marginTop: 10,
-                  }}
-                >
-                  Vamos personalizar seu cuidado?
-                </Text>
-
-                <Text
-                  style={[
-                    descricao,
-                    { marginTop: 8 },
-                  ]}
-                >
-                  Responda ao questionário sobre seus hábitos para receber dicas mais adequadas ao seu dia a dia.
-                </Text>
-
-                <TouchableOpacity
-                  onPress={() =>
-                    router.push(
-                      '/questionario'
-                    )
-                  }
-                  style={[
-                    styles.botaoAcao,
-                    {
-                      backgroundColor:
-                        cores.primario,
-                      borderRadius:
-                        raioMenor,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      color: cores.textoBotao,
-                      fontWeight: '800',
-                    }}
-                  >
-                    Responder questionário →
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <>
-                {dicasPersonalizadas.length ? (
-                  dicasPersonalizadas
-                    .slice(0, 3)
-                    .map((dica, indice) => (
-                      <View
-                        key={`${indice}-${dica}`}
-                        style={[
-                          styles.dica,
-                          card,
-                        ]}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 25,
-                            marginRight: 13,
-                          }}
-                        >
-                          {
-                            ['💧', '🌙', '🧘'][
-                              indice % 3
-                            ]
-                          }
-                        </Text>
-
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              color: cores.primario,
-                              fontSize: fonte(12),
-                              fontWeight: '800',
-                            }}
-                          >
-                            SUGESTÃO {indice + 1}
-                          </Text>
-
-                          <Text
-                            style={{
-                              color: cores.texto,
-                              fontSize: fonte(15),
-                              lineHeight: fonte(23),
-                              marginTop: 7,
-                            }}
-                          >
-                            {dica}
-                          </Text>
-                        </View>
-                      </View>
-                    ))
-                ) : (
-                  <View
-                    style={[
-                      styles.card,
-                      card,
-                    ]}
-                  >
-                    <Text style={descricao}>
-                      Continue descobrindo os hábitos que fazem bem a você. 🌷
-                    </Text>
-                  </View>
-                )}
-
-                {/* SEM LINK PARA MEU ESPAÇO */}
-
-                <View style={styles.linksDicas}>
-                  <TouchableOpacity
-                    onPress={() =>
-                      router.push(
-                        '/questionario'
-                      )
-                    }
-                  >
-                    <Text
-                      style={{
-                        color: cores.primario,
-                        fontWeight: '800',
-                      }}
-                    >
-                      Atualizar respostas →
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-          </View>
-
-          {/* MENSAGEM FINAL */}
-
-          <View
-            style={[
-              styles.mensagemFinal,
-              cardSuave,
-            ]}
-          >
-            <Text style={{ fontSize: 29 }}>
-              💗
-            </Text>
-
-            <View
-              style={{
-                flex: 1,
-                marginLeft: 12,
-              }}
-            >
-              <Text
-                style={{
-                  color: cores.texto,
-                  fontSize: fonte(18),
-                  fontWeight: '800',
-                }}
-              >
-                Um lembrete para {nome || 'você'}
-              </Text>
-
-              <Text
-                style={[
-                  descricao,
-                  { marginTop: 8 },
-                ]}
-              >
-                {mensagem} Você não precisa fazer tudo perfeitamente. O importante é cuidar de si com carinho.
-              </Text>
-            </View>
-          </View>
-
           {/* CONFIGURAÇÕES */}
 
           <TouchableOpacity
@@ -1793,37 +1420,6 @@ const styles = StyleSheet.create({
     marginTop: 18,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  atalhos: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 14,
-    marginTop: 8,
-  },
-  atalho: {
-    borderWidth: 1,
-    padding: 17,
-  },
-  dica: {
-    borderWidth: 1,
-    padding: 18,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  linksDicas: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 15,
-    marginTop: 12,
-  },
-  mensagemFinal: {
-    borderWidth: 1,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 20,
   },
   configuracoes: {
     padding: 19,

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   View,
@@ -14,26 +13,24 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
-
 import {
   useAutocuidado,
   chaveRespostas,
 } from './AutocuidadoContext';
-
+import { copiarProgressoAntigo } from '../lib/backupInicial';
+import { restaurarProgressoDoSupabase } from '../lib/restaurarProgresso';
+import { iniciarSincronizacaoAutomatica } from '../lib/sincronizacaoAutomatica';
 // ============================================
 // TEMA FIXO DA TELA DE CADASTRO
 // ============================================
-
 // Estas cores não dependem das configurações
 // de tema do usuário.
 //
 // A pessoa pode escolher outro tema dentro
 // do aplicativo, mas o cadastro continuará
 // sempre roxo e lilás.
-
 const cores = {
   fundo: '#FAF7FF',
   card: '#FFFFFF',
@@ -44,17 +41,13 @@ const cores = {
   borda: '#EEE5F5',
   textoBotao: '#FFFFFF',
 };
-
 const raioCartao = 22;
 const escalaFonte = 1.1;
-
 // O cadastro sempre usa o tema claro.
 const escuro = false;
-
 // ============================================
 // BENEFÍCIOS DO APLICATIVO
 // ============================================
-
 const BENEFICIOS = [
   {
     id: 'rotina',
@@ -85,11 +78,9 @@ const BENEFICIOS = [
       'Explore exercícios de respiração e técnicas de relaxamento.',
   },
 ];
-
 // ============================================
 // AVISOS
 // ============================================
-
 function mostrarAviso(
   titulo: string,
   mensagem: string
@@ -100,22 +91,17 @@ function mostrarAviso(
     }
     return;
   }
-
   Alert.alert(titulo, mensagem);
 }
-
 // ============================================
 // VALIDAR QUESTIONÁRIO SALVO
 // ============================================
-
 function questionarioJaRespondido(
   texto: string | null
 ): boolean {
   if (!texto) return false;
-
   try {
     const dados = JSON.parse(texto);
-
     if (
       !dados ||
       typeof dados !== 'object' ||
@@ -123,7 +109,6 @@ function questionarioJaRespondido(
     ) {
       return false;
     }
-
     return (
       typeof dados.sono === 'string' &&
       typeof dados.agua === 'string' &&
@@ -137,50 +122,37 @@ function questionarioJaRespondido(
     return false;
   }
 }
-
 // ============================================
 // TELA DE CADASTRO
 // ============================================
-
 export default function Login() {
   const { salvarUsuario } = useAutocuidado();
-
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
-
   const [aceitouTermos, setAceitouTermos] =
     useState(false);
-
   const [salvando, setSalvando] =
     useState(false);
-
   const [campoAtivo, setCampoAtivo] = useState<
     'nome' | 'email' | null
   >(null);
-
   const fonte = (tamanho: number) =>
     Math.round(tamanho * escalaFonte);
-
   const raioMenor = Math.max(
     6,
     raioCartao - 8
   );
-
   // ==========================================
   // CONTINUAR COM O E-MAIL INFORMADO
   // ==========================================
-
   async function continuar() {
     if (salvando) return;
-
     const nomeLimpo = nome
       .trim()
       .replace(/\s+/g, ' ');
-
     const emailLimpo = email
       .trim()
       .toLowerCase();
-
     if (nomeLimpo.length < 2) {
       mostrarAviso(
         'Nome inválido',
@@ -188,12 +160,10 @@ export default function Login() {
       );
       return;
     }
-
     const emailValido =
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
         emailLimpo
       );
-
     if (!emailValido) {
       mostrarAviso(
         'E-mail inválido',
@@ -201,7 +171,6 @@ export default function Login() {
       );
       return;
     }
-
     if (!aceitouTermos) {
       mostrarAviso(
         'Confirmação necessária',
@@ -209,47 +178,75 @@ export default function Login() {
       );
       return;
     }
-
     setSalvando(true);
-
     try {
-      // Verifica se o e-mail informado
-      // já possui um questionário salvo.
+      // Consulta a nuvem ANTES de carregar o perfil, sem substituir os dados
+      // locais existentes. Se não houver dados locais e a nuvem estiver fora,
+      // interrompe a entrada para não iniciar uma conta antiga do zero.
+      const respostasAntes = await AsyncStorage.getItem(
+        chaveRespostas(emailLimpo)
+      );
+      const tinhaDadosLocais = questionarioJaRespondido(respostasAntes);
+      let recuperacaoFuncionou = false;
+      try {
+        const recuperados = await restaurarProgressoDoSupabase(emailLimpo);
+        recuperacaoFuncionou = true;
+        console.log('Registros recuperados da nuvem:', recuperados);
+      } catch (erroRecuperacao) {
+        console.warn('Não foi possível acessar os dados da nuvem:', erroRecuperacao);
+        if (!tinhaDadosLocais) {
+          throw new Error(
+            'Não foi possível consultar o Supabase agora. Tente novamente para recuperar a conta antes de iniciar o questionário.'
+          );
+        }
+      }
 
-      const respostasSalvas =
-        await AsyncStorage.getItem(
-          chaveRespostas(emailLimpo)
-        );
+      const respostasSalvas = await AsyncStorage.getItem(
+        chaveRespostas(emailLimpo)
+      );
+      const jaRespondeu = questionarioJaRespondido(respostasSalvas);
 
-      const jaRespondeu =
-        questionarioJaRespondido(
-          respostasSalvas
-        );
-
-      // Recupera os dados correspondentes
-      // ao e-mail informado.
-      //
-      // O contexto é responsável por
-      // carregar as informações do usuário.
-
+      // Abre a conta antiga com o nome e e-mail que a pessoa informou.
       await salvarUsuario({
         nome: nomeLimpo,
         email: emailLimpo,
       });
 
-      // Limpa os campos do cadastro.
+      // Faz uma cópia não destrutiva do progresso local que ainda não
+      // existe na nuvem. Falhas não devem impedir acesso aos dados locais.
+      try {
+        const quantidade = await copiarProgressoAntigo(emailLimpo);
+        console.log('Backup confirmado no Supabase:', quantidade, 'registro(s)');
+      } catch (erroBackup) {
+        console.warn('Backup para a nuvem pendente:', erroBackup);
+      }
 
+      // A partir deste momento, envia automaticamente as novas alterações
+      // locais ao Supabase, sem regravar o progresso antigo na inicialização.
+      try {
+        await iniciarSincronizacaoAutomatica(emailLimpo);
+      } catch (erroSync) {
+        console.warn('Não foi possível iniciar a sincronização automática:', erroSync);
+      }
+
+      // Se não há questionário local e a nuvem não foi acessível,
+      // avisa que o progresso pode não ter sido recuperado.
+      if (!recuperacaoFuncionou) {
+        mostrarAviso(
+          'Acesso local',
+          'Seus dados deste computador continuam disponíveis, mas o Supabase não respondeu. As alterações novas ainda não estão sincronizadas.'
+        );
+      }
+      // Limpa os campos do cadastro.
       setNome('');
       setEmail('');
       setAceitouTermos(false);
       setCampoAtivo(null);
-
       // E-mail com questionário:
       // entra diretamente no aplicativo.
       //
       // E-mail sem questionário:
       // abre o questionário.
-
       if (jaRespondeu) {
         router.replace('/');
       } else {
@@ -260,20 +257,17 @@ export default function Login() {
         'Erro ao entrar no aplicativo:',
         erro
       );
-
       mostrarAviso(
         'Não foi possível continuar',
-        'Não conseguimos carregar seus dados. Tente novamente.'
+        erro instanceof Error ? erro.message : 'Não conseguimos carregar seus dados. Tente novamente.'
       );
     } finally {
       setSalvando(false);
     }
   }
-
   // ==========================================
   // INTERFACE
   // ==========================================
-
   return (
     <SafeAreaView
       style={[
@@ -291,7 +285,6 @@ export default function Login() {
         }
         backgroundColor={cores.fundo}
       />
-
       <KeyboardAvoidingView
         style={styles.teclado}
         behavior={
@@ -308,9 +301,7 @@ export default function Login() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.conteudoCentral}>
-
             {/* LOGO */}
-
             <View style={styles.topo}>
               <View
                 style={[
@@ -339,7 +330,6 @@ export default function Login() {
                   </Text>
                 </View>
               </View>
-
               <Text
                 style={[
                   styles.nomeAplicativo,
@@ -353,7 +343,6 @@ export default function Login() {
               >
                 MeuAutoCuidado
               </Text>
-
               <Text
                 style={[
                   styles.fraseAplicativo,
@@ -369,7 +358,6 @@ export default function Login() {
               >
                 Seu bem-estar começa com pequenos cuidados.
               </Text>
-
               <View
                 style={[
                   styles.seloTopo,
@@ -396,9 +384,7 @@ export default function Login() {
                 </Text>
               </View>
             </View>
-
             {/* BOAS-VINDAS */}
-
             <View style={styles.boasVindas}>
               <Text
                 style={[
@@ -413,7 +399,6 @@ export default function Login() {
               >
                 SUA JORNADA COMEÇA AQUI
               </Text>
-
               <Text
                 style={[
                   styles.titulo,
@@ -429,7 +414,6 @@ export default function Login() {
               >
                 Boas-vindas! 💜
               </Text>
-
               <Text
                 style={[
                   styles.subtitulo,
@@ -449,9 +433,7 @@ export default function Login() {
                 suas informações serão recuperadas.
               </Text>
             </View>
-
             {/* FORMULÁRIO */}
-
             <View
               style={[
                 styles.formulario,
@@ -489,7 +471,6 @@ export default function Login() {
                     👤
                   </Text>
                 </View>
-
                 <View
                   style={
                     styles.formularioInfo
@@ -508,7 +489,6 @@ export default function Login() {
                   >
                     Seus dados
                   </Text>
-
                   <Text
                     style={[
                       styles.formularioDescricao,
@@ -526,9 +506,7 @@ export default function Login() {
                   </Text>
                 </View>
               </View>
-
               {/* CAMPO NOME */}
-
               <Text
                 style={[
                   styles.campoLabel,
@@ -542,7 +520,6 @@ export default function Login() {
               >
                 Nome completo
               </Text>
-
               <View
                 style={[
                   styles.campoContainer,
@@ -565,7 +542,6 @@ export default function Login() {
                 >
                   👤
                 </Text>
-
                 <TextInput
                   style={[
                     styles.campoInput,
@@ -595,9 +571,7 @@ export default function Login() {
                   returnKeyType="next"
                 />
               </View>
-
               {/* CAMPO E-MAIL */}
-
               <Text
                 style={[
                   styles.campoLabel,
@@ -611,7 +585,6 @@ export default function Login() {
               >
                 E-mail
               </Text>
-
               <View
                 style={[
                   styles.campoContainer,
@@ -634,7 +607,6 @@ export default function Login() {
                 >
                   ✉️
                 </Text>
-
                 <TextInput
                   style={[
                     styles.campoInput,
@@ -665,9 +637,7 @@ export default function Login() {
                   editable={!salvando}
                 />
               </View>
-
               {/* INFORMAÇÃO DO CADASTRO */}
-
               <View
                 style={[
                   styles.informacaoCard,
@@ -686,7 +656,6 @@ export default function Login() {
                 >
                   🔐
                 </Text>
-
                 <View
                   style={
                     styles.informacaoConteudo
@@ -705,7 +674,6 @@ export default function Login() {
                   >
                     Acesso pelo e-mail
                   </Text>
-
                   <Text
                     style={[
                       styles.informacaoTexto,
@@ -728,9 +696,7 @@ export default function Login() {
                   </Text>
                 </View>
               </View>
-
               {/* CONSENTIMENTO */}
-
               <TouchableOpacity
                 style={
                   styles.termosContainer
@@ -779,7 +745,6 @@ export default function Login() {
                     </Text>
                   )}
                 </View>
-
                 <Text
                   style={[
                     styles.termosTexto,
@@ -800,9 +765,7 @@ export default function Login() {
                   neste aplicativo.
                 </Text>
               </TouchableOpacity>
-
               {/* BOTÃO CONTINUAR */}
-
               <TouchableOpacity
                 style={[
                   styles.botaoContinuar,
@@ -842,7 +805,6 @@ export default function Login() {
                   </Text>
                 )}
               </TouchableOpacity>
-
               <Text
                 style={[
                   styles.aviso,
@@ -862,9 +824,7 @@ export default function Login() {
                 neste dispositivo.
               </Text>
             </View>
-
             {/* BENEFÍCIOS */}
-
             <View
               style={
                 styles.beneficiosSecao
@@ -883,7 +843,6 @@ export default function Login() {
               >
                 TUDO PENSADO PARA VOCÊ
               </Text>
-
               <Text
                 style={[
                   styles.beneficiosTitulo,
@@ -897,7 +856,6 @@ export default function Login() {
               >
                 Seu autocuidado em um só lugar
               </Text>
-
               <Text
                 style={[
                   styles.beneficiosDescricao,
@@ -914,7 +872,6 @@ export default function Login() {
                 Descubra recursos que ajudam você
                 a construir hábitos mais saudáveis.
               </Text>
-
               {BENEFICIOS.map(
                 beneficio => (
                   <View
@@ -952,7 +909,6 @@ export default function Login() {
                         {beneficio.emoji}
                       </Text>
                     </View>
-
                     <View
                       style={
                         styles.beneficioInfo
@@ -971,7 +927,6 @@ export default function Login() {
                       >
                         {beneficio.titulo}
                       </Text>
-
                       <Text
                         style={[
                           styles.beneficioDescricao,
@@ -992,9 +947,7 @@ export default function Login() {
                 )
               )}
             </View>
-
             {/* MENSAGEM FINAL */}
-
             <View
               style={[
                 styles.mensagemFinal,
@@ -1015,7 +968,6 @@ export default function Login() {
               >
                 💗
               </Text>
-
               <Text
                 style={[
                   styles.mensagemTexto,
@@ -1035,7 +987,6 @@ export default function Login() {
                 pequena conquista.
               </Text>
             </View>
-
             <Text
               style={[
                 styles.rodape,
@@ -1049,27 +1000,22 @@ export default function Login() {
             >
               MEUAUTOCUIDADO • SEU BEM-ESTAR IMPORTA
             </Text>
-
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
-
 // ============================================
 // ESTILOS
 // ============================================
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-
   teclado: {
     flex: 1,
   },
-
   container: {
     flexGrow: 1,
     paddingHorizontal: 18,
@@ -1077,17 +1023,14 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
     alignItems: 'center',
   },
-
   conteudoCentral: {
     width: '100%',
     maxWidth: 760,
   },
-
   topo: {
     alignItems: 'center',
     marginBottom: 35,
   },
-
   logoExterior: {
     width: 105,
     height: 105,
@@ -1095,69 +1038,56 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 17,
   },
-
   logoContainer: {
     width: 84,
     height: 84,
     alignItems: 'center',
     justifyContent: 'center',
   },
-
   logoEmoji: {
     fontSize: 43,
   },
-
   nomeAplicativo: {
     fontWeight: '800',
     textAlign: 'center',
   },
-
   fraseAplicativo: {
     textAlign: 'center',
     marginTop: 10,
   },
-
   seloTopo: {
     paddingHorizontal: 16,
     paddingVertical: 11,
     marginTop: 19,
   },
-
   seloTopoTexto: {
     fontWeight: '800',
     textAlign: 'center',
   },
-
   boasVindas: {
     marginBottom: 25,
   },
-
   etiqueta: {
     fontWeight: '800',
     letterSpacing: 0.9,
     marginBottom: 9,
   },
-
   titulo: {
     fontWeight: '800',
   },
-
   subtitulo: {
     marginTop: 11,
   },
-
   formulario: {
     padding: 21,
     borderWidth: 1,
     marginBottom: 34,
   },
-
   formularioCabecalho: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 28,
   },
-
   formularioIcone: {
     width: 55,
     height: 55,
@@ -1165,28 +1095,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 13,
   },
-
   formularioEmoji: {
     fontSize: 27,
   },
-
   formularioInfo: {
     flex: 1,
   },
-
   formularioTitulo: {
     fontWeight: '800',
   },
-
   formularioDescricao: {
     marginTop: 6,
   },
-
   campoLabel: {
     fontWeight: '800',
     marginBottom: 11,
   },
-
   campoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1195,49 +1119,40 @@ const styles = StyleSheet.create({
     minHeight: 65,
     marginBottom: 24,
   },
-
   campoIcone: {
     fontSize: 20,
     marginRight: 9,
   },
-
   campoInput: {
     flex: 1,
     minWidth: 0,
     paddingVertical: 13,
     paddingHorizontal: 5,
   },
-
   informacaoCard: {
     flexDirection: 'row',
     padding: 17,
     marginBottom: 25,
   },
-
   informacaoEmoji: {
     fontSize: 25,
     marginRight: 12,
   },
-
   informacaoConteudo: {
     flex: 1,
   },
-
   informacaoTitulo: {
     fontWeight: '800',
   },
-
   informacaoTexto: {
     marginTop: 7,
   },
-
   termosContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 26,
     paddingVertical: 5,
   },
-
   checkbox: {
     width: 27,
     height: 27,
@@ -1247,15 +1162,12 @@ const styles = StyleSheet.create({
     marginRight: 12,
     marginTop: 2,
   },
-
   checkboxTexto: {
     fontWeight: '800',
   },
-
   termosTexto: {
     flex: 1,
   },
-
   botaoContinuar: {
     paddingVertical: 19,
     paddingHorizontal: 12,
@@ -1263,40 +1175,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 60,
   },
-
   botaoDesabilitado: {
     opacity: 0.6,
   },
-
   botaoContinuarTexto: {
     fontWeight: '800',
     textAlign: 'center',
   },
-
   aviso: {
     textAlign: 'center',
     marginTop: 19,
   },
-
   beneficiosSecao: {
     marginBottom: 30,
   },
-
   beneficiosEtiqueta: {
     fontWeight: '800',
     marginBottom: 10,
     letterSpacing: 0.7,
   },
-
   beneficiosTitulo: {
     fontWeight: '800',
   },
-
   beneficiosDescricao: {
     marginTop: 9,
     marginBottom: 20,
   },
-
   beneficioCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1304,7 +1208,6 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
   },
-
   beneficioIcone: {
     width: 54,
     height: 54,
@@ -1312,39 +1215,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 13,
   },
-
   beneficioEmoji: {
     fontSize: 26,
   },
-
   beneficioInfo: {
     flex: 1,
   },
-
   beneficioTitulo: {
     fontWeight: '800',
   },
-
   beneficioDescricao: {
     marginTop: 7,
   },
-
   mensagemFinal: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 19,
     borderWidth: 1,
   },
-
   mensagemEmoji: {
     fontSize: 29,
     marginRight: 13,
   },
-
   mensagemTexto: {
     flex: 1,
   },
-
   rodape: {
     fontWeight: '800',
     letterSpacing: 0.7,
